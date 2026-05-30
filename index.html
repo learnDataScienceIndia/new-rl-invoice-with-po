@@ -142,7 +142,7 @@
       text-align:center; font-size:11.5px; font-weight:800;
       letter-spacing:2px; text-transform:uppercase;
       padding:7px 0 6px; border-bottom:1.5px solid var(--border);
-      margin-bottom:0;
+      margin-bottom:0; display:block;
     }
 
     /* INVOICE META */
@@ -400,7 +400,7 @@
   <main class="po-body">
 
     <!-- 1. Invoice Meta -->
-    <div class="sec-head">Invoice</div>
+    <div class="sec-head" contenteditable="true">Invoice</div>
     <table class="po-meta-tbl">
       <tr>
         <td class="lbl-td">Invoice No. :</td>
@@ -450,25 +450,28 @@
           <th class="dh">Description</th>
           <th style="width:60px">Qty</th>
           <th style="width:120px">Unit Price (<span id="curHdr">USD</span>)</th>
+          <th style="width:70px">VAT %</th>
           <th style="width:120px">Total (<span id="curHdr2">USD</span>):</th>
           <th style="width:30px" class="no-print"></th>
         </tr>
       </thead>
       <tbody id="tbody"></tbody>
       <tfoot>
-        <tr>
-          <td colspan="4" style="text-align:right; font-weight:700; padding:7px 12px; border:none; border-right:1px solid var(--border); font-size:12px;">Subtotal</td>
-          <td id="subTotalVal" style="font-weight:700; text-align:center; border:none; padding:7px 12px; border-bottom:1px solid var(--border);"><span class="curSymDisplay">$</span> 0.00</td>
-          <td class="no-print" style="border:none;"></td>
-        </tr>
-        <tr>
-          <td colspan="4" style="text-align:right; font-weight:700; padding:7px 12px; border:none; border-right:1px solid var(--border); font-size:12px;">VAT (5%)</td>
-          <td id="vatVal" style="font-weight:700; text-align:center; border:none; padding:7px 12px;"><span class="curSymDisplay">$</span> 0.00</td>
-          <td class="no-print" style="border:none;"></td>
-        </tr>
         <tr class="gt-tr">
-          <td colspan="4" class="gt-lbl">Grand Total</td>
-          <td class="gt-val" id="gtVal"><span id="curSymDisplay">$</span> 0.00</td>
+          <td colspan="4" style="text-align:left; border:none; padding:9px 16px !important;">
+             <div style="display:flex; gap:40px; align-items:center;">
+               <div>
+                 <div style="font-size:10px; font-weight:700; color:rgba(255,255,255,0.7); text-transform:uppercase; letter-spacing:1px; margin-bottom:2px;">Subtotal</div>
+                 <div id="subTotalVal" style="font-size:15px; font-weight:800; color:#fff;"><span class="curSymDisplay">$</span> 0.00</div>
+               </div>
+               <div>
+                 <div style="font-size:10px; font-weight:700; color:rgba(255,255,255,0.7); text-transform:uppercase; letter-spacing:1px; margin-bottom:2px;">Total VAT</div>
+                 <div id="vatVal" style="font-size:15px; font-weight:800; color:#fff;"><span class="curSymDisplay">$</span> 0.00</div>
+               </div>
+             </div>
+          </td>
+          <td class="gt-lbl" style="vertical-align:middle;">Grand Total</td>
+          <td class="gt-val" id="gtVal" style="vertical-align:middle;"><span id="curSymDisplay">$</span> 0.00</td>
           <td class="no-print" style="background:transparent;border:none;"></td>
         </tr>
       </tfoot>
@@ -641,6 +644,7 @@
       <td class="dtd"><input type="text"   placeholder="Item description" id="d${id}"/></td>
       <td><input type="number" min="0" step="any" placeholder="0"    id="q${id}" class="qi" inputmode="decimal"/></td>
       <td><input type="number" min="0" step="any" placeholder="0.00" id="rt${id}" class="ri" inputmode="decimal"/></td>
+      <td><input type="number" min="0" step="any" placeholder="0"    id="v${id}" class="vi" inputmode="decimal"/></td>
       <td><input type="number" min="0" step="any" placeholder="0.00" id="a${id}" class="ai amt-inp" inputmode="decimal"/></td>
       <td class="no-print"><button class="rm-btn" onclick="removeRow(${id})" title="Remove">✕</button></td>
     `;
@@ -648,13 +652,17 @@
     /* Wire events */
     const qi = tr.querySelector('.qi');
     const ri = tr.querySelector('.ri');
+    const vi = tr.querySelector('.vi');
     const ai = tr.querySelector('.ai');
 
     function qrChange() {
       const q = parseFloat(qi.value) || 0;
       const r = parseFloat(ri.value) || 0;
+      const v = parseFloat(vi.value) || 0;
       if (q > 0 && r > 0) {
-        ai.value = (q * r).toFixed(2);
+        const base = q * r;
+        const vat = base * (v / 100);
+        ai.value = (base + vat).toFixed(2);
       } else if (q === 0 && r === 0) {
         ai.value = '';
       }
@@ -664,6 +672,7 @@
     ai.addEventListener('input', () => recalcTotal());
     qi.addEventListener('input', qrChange);
     ri.addEventListener('input', qrChange);
+    vi.addEventListener('input', qrChange);
 
     document.getElementById('tbody').appendChild(tr);
     updateRowCount();
@@ -689,16 +698,30 @@
 
   /* ── Recalc Grand Total ── */
   function recalcTotal() {
-    let subtotal = 0;
-    document.querySelectorAll('.ai').forEach(inp => {
-      subtotal += parseFloat(inp.value) || 0;
+    let subtotalBase = 0;
+    let totalVat = 0;
+    
+    document.querySelectorAll('#tbody tr').forEach(tr => {
+      const qi = tr.querySelector('.qi');
+      const ri = tr.querySelector('.ri');
+      const vi = tr.querySelector('.vi');
+      
+      const q = parseFloat(qi ? qi.value : 0) || 0;
+      const r = parseFloat(ri ? ri.value : 0) || 0;
+      const base = q * r;
+      subtotalBase += base;
+      
+      if (vi) {
+        const vatPercent = parseFloat(vi.value) || 0;
+        totalVat += base * (vatPercent / 100);
+      }
     });
-    const vat = subtotal * 0.05;
-    const grandTotal = subtotal + vat;
+    
+    const grandTotal = subtotalBase + totalVat;
     const sym = SYM[curCode] || curCode;
     
-    document.getElementById('subTotalVal').innerHTML = `<span class="curSymDisplay">${sym}</span> ${fmtN(subtotal)}`;
-    document.getElementById('vatVal').innerHTML = `<span class="curSymDisplay">${sym}</span> ${fmtN(vat)}`;
+    document.getElementById('subTotalVal').innerHTML = `<span class="curSymDisplay">${sym}</span> ${fmtN(subtotalBase)}`;
+    document.getElementById('vatVal').innerHTML = `<span class="curSymDisplay">${sym}</span> ${fmtN(totalVat)}`;
     document.getElementById('gtVal').innerHTML = `<span id="curSymDisplay">${sym}</span> ${fmtN(grandTotal)}`;
   }
 
