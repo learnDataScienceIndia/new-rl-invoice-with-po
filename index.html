@@ -201,13 +201,16 @@
     .item-tbl tbody td.dtd{text-align:left;}
     .item-tbl tbody td.sr{font-size:11px;font-weight:600;color:var(--muted);width:34px;}
 
-    .item-tbl tbody td input{
+    .item-tbl tbody td input, .item-tbl tbody td textarea {
       width:100%;border:none;background:transparent;
       text-align:center;font-family:'Inter',sans-serif;
       font-size:11.5px;color:var(--text);padding:3px 4px;outline:none;
     }
-    .item-tbl tbody td.dtd input{text-align:left;}
-    .item-tbl tbody td input:focus{
+    .item-tbl tbody td.dtd input, .item-tbl tbody td.dtd textarea {text-align:left;}
+    .item-tbl tbody td textarea {
+      resize:none; overflow:hidden; min-height:22px; line-height:1.4; vertical-align:middle; display:block;
+    }
+    .item-tbl tbody td input:focus, .item-tbl tbody td textarea:focus {
       background:rgba(10,127,63,.06);border-radius:3px;
     }
 
@@ -450,7 +453,7 @@
           <th class="dh">Description</th>
           <th style="width:60px">Qty</th>
           <th style="width:120px">Unit Price (<span id="curHdr">USD</span>)</th>
-          <th style="width:70px">VAT %</th>
+          <th style="width:85px">VAT 5% (<span id="curHdr3">USD</span>)</th>
           <th style="width:120px">Total (<span id="curHdr2">USD</span>):</th>
           <th style="width:30px" class="no-print"></th>
         </tr>
@@ -641,10 +644,10 @@
     tr.id = `r${id}`;
     tr.innerHTML = `
       <td class="sr" id="sr${id}">${document.querySelectorAll('#tbody tr').length + 1}</td>
-      <td class="dtd"><input type="text"   placeholder="Item description" id="d${id}"/></td>
+      <td class="dtd"><textarea placeholder="Item description" id="d${id}" class="desc-ta" rows="1"></textarea></td>
       <td><input type="number" min="0" step="any" placeholder="0"    id="q${id}" class="qi" inputmode="decimal"/></td>
       <td><input type="number" min="0" step="any" placeholder="0.00" id="rt${id}" class="ri" inputmode="decimal"/></td>
-      <td><input type="number" min="0" step="any" placeholder="0"    id="v${id}" class="vi" inputmode="decimal"/></td>
+      <td><input type="number" min="0" step="any" placeholder="0.00" id="v${id}" class="vi" readonly tabindex="-1" style="color:var(--text); outline:none; background:transparent; border:none; text-align:center;"/></td>
       <td><input type="number" min="0" step="any" placeholder="0.00" id="a${id}" class="ai amt-inp" inputmode="decimal"/></td>
       <td class="no-print"><button class="rm-btn" onclick="removeRow(${id})" title="Remove">✕</button></td>
     `;
@@ -654,25 +657,48 @@
     const ri = tr.querySelector('.ri');
     const vi = tr.querySelector('.vi');
     const ai = tr.querySelector('.ai');
+    const descTa = tr.querySelector('.desc-ta');
 
-    function qrChange() {
-      const q = parseFloat(qi.value) || 0;
-      const r = parseFloat(ri.value) || 0;
-      const v = parseFloat(vi.value) || 0;
-      if (q > 0 && r > 0) {
-        const base = q * r;
-        const vat = base * (v / 100);
-        ai.value = (base + vat).toFixed(2);
-      } else if (q === 0 && r === 0) {
-        ai.value = '';
+    descTa.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = this.scrollHeight + 'px';
+    });
+
+    let calcMode = 'forward';
+
+    function doCalc() {
+      if (calcMode === 'forward') {
+        const q = parseFloat(qi.value) || 0;
+        const r = parseFloat(ri.value) || 0;
+        if (q > 0 && r > 0) {
+          const base = q * r;
+          const vatAmt = base * 0.05;
+          vi.value = vatAmt.toFixed(2);
+          ai.value = (base + vatAmt).toFixed(2);
+        } else {
+          vi.value = '';
+          ai.value = '';
+        }
+      } else {
+        const q = parseFloat(qi.value) || 1;
+        const a = parseFloat(ai.value) || 0;
+        if (a > 0) {
+          const base = a / 1.05;
+          const r = base / q;
+          const vatAmt = a - base;
+          ri.value = r.toFixed(2);
+          vi.value = vatAmt.toFixed(2);
+        } else {
+          ri.value = '';
+          vi.value = '';
+        }
       }
       recalcTotal();
     }
 
-    ai.addEventListener('input', () => recalcTotal());
-    qi.addEventListener('input', qrChange);
-    ri.addEventListener('input', qrChange);
-    vi.addEventListener('input', qrChange);
+    qi.addEventListener('input', doCalc);
+    ri.addEventListener('input', () => { calcMode = 'forward'; doCalc(); });
+    ai.addEventListener('input', () => { calcMode = 'backward'; doCalc(); });
 
     document.getElementById('tbody').appendChild(tr);
     updateRowCount();
@@ -700,24 +726,21 @@
   function recalcTotal() {
     let subtotalBase = 0;
     let totalVat = 0;
+    let grandTotal = 0;
     
     document.querySelectorAll('#tbody tr').forEach(tr => {
-      const qi = tr.querySelector('.qi');
-      const ri = tr.querySelector('.ri');
       const vi = tr.querySelector('.vi');
+      const ai = tr.querySelector('.ai');
       
-      const q = parseFloat(qi ? qi.value : 0) || 0;
-      const r = parseFloat(ri ? ri.value : 0) || 0;
-      const base = q * r;
-      subtotalBase += base;
+      const rowTotal = parseFloat(ai ? ai.value : 0) || 0;
+      const rowVat = parseFloat(vi ? vi.value : 0) || 0;
+      const rowBase = rowTotal - rowVat;
       
-      if (vi) {
-        const vatPercent = parseFloat(vi.value) || 0;
-        totalVat += base * (vatPercent / 100);
-      }
+      subtotalBase += rowBase;
+      totalVat += rowVat;
+      grandTotal += rowTotal;
     });
     
-    const grandTotal = subtotalBase + totalVat;
     const sym = SYM[curCode] || curCode;
     
     document.getElementById('subTotalVal').innerHTML = `<span class="curSymDisplay">${sym}</span> ${fmtN(subtotalBase)}`;
@@ -735,7 +758,7 @@
     curCode = document.getElementById('curSel').value;
     const sym = SYM[curCode] || curCode;
     // Update column headers
-    document.querySelectorAll('#curHdr, #curHdr2').forEach(el => el.textContent = curCode);
+    document.querySelectorAll('#curHdr, #curHdr2, #curHdr3').forEach(el => el.textContent = curCode);
     recalcTotal();
   }
 
