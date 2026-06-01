@@ -453,27 +453,32 @@
           <th class="dh">Description</th>
           <th style="width:60px">Qty</th>
           <th style="width:120px">Unit Price (<span id="curHdr">USD</span>)</th>
+          <th style="width:100px">Total (<span id="curHdr4">USD</span>)</th>
           <th style="width:85px">VAT 5% (<span id="curHdr3">USD</span>)</th>
-          <th style="width:120px">Total (<span id="curHdr2">USD</span>):</th>
+          <th style="width:120px">Grand Total (<span id="curHdr2">USD</span>):</th>
           <th style="width:30px" class="no-print"></th>
         </tr>
       </thead>
       <tbody id="tbody"></tbody>
       <tfoot>
+        <!-- Subtotal Row -->
+        <tr>
+          <td colspan="5" style="border:none; background:transparent;"></td>
+          <td style="font-weight:700; text-align:center; border:1px solid var(--border); font-size:12px; padding:7px; background:#fff;">Subtotal</td>
+          <td style="font-weight:800; text-align:center; border:1px solid var(--border); font-size:13px; padding:7px; background:#fff; color:var(--text);" id="subTotalVal"><span class="curSymDisplay">$</span> 0.00</td>
+          <td class="no-print" style="border:none; background:transparent;"></td>
+        </tr>
+        <!-- VAT Row -->
+        <tr>
+          <td colspan="5" style="border:none; background:transparent;"></td>
+          <td style="font-weight:700; text-align:center; border:1px solid var(--border); font-size:12px; padding:7px; background:#fff;">VAT (5%)</td>
+          <td style="font-weight:800; text-align:center; border:1px solid var(--border); font-size:13px; padding:7px; background:#fff; color:var(--text);" id="vatVal"><span class="curSymDisplay">$</span> 0.00</td>
+          <td class="no-print" style="border:none; background:transparent;"></td>
+        </tr>
+        <!-- Grand Total Row -->
         <tr class="gt-tr">
-          <td colspan="4" style="text-align:left; border:none; padding:9px 16px !important;">
-             <div style="display:flex; gap:40px; align-items:center;">
-               <div>
-                 <div style="font-size:10px; font-weight:700; color:rgba(255,255,255,0.7); text-transform:uppercase; letter-spacing:1px; margin-bottom:2px;">Subtotal</div>
-                 <div id="subTotalVal" style="font-size:15px; font-weight:800; color:#fff;"><span class="curSymDisplay">$</span> 0.00</div>
-               </div>
-               <div>
-                 <div style="font-size:10px; font-weight:700; color:rgba(255,255,255,0.7); text-transform:uppercase; letter-spacing:1px; margin-bottom:2px;">Total VAT</div>
-                 <div id="vatVal" style="font-size:15px; font-weight:800; color:#fff;"><span class="curSymDisplay">$</span> 0.00</div>
-               </div>
-             </div>
-          </td>
-          <td class="gt-lbl" style="vertical-align:middle;">Grand Total</td>
+          <td colspan="5" style="border:none;"></td>
+          <td class="gt-lbl" style="vertical-align:middle; text-align:center !important;">Grand Total</td>
           <td class="gt-val" id="gtVal" style="vertical-align:middle;"><span id="curSymDisplay">$</span> 0.00</td>
           <td class="no-print" style="background:transparent;border:none;"></td>
         </tr>
@@ -647,6 +652,7 @@
       <td class="dtd"><textarea placeholder="Item description" id="d${id}" class="desc-ta" rows="1"></textarea></td>
       <td><input type="number" min="0" step="any" placeholder="0"    id="q${id}" class="qi" inputmode="decimal"/></td>
       <td><input type="number" min="0" step="any" placeholder="0.00" id="rt${id}" class="ri" inputmode="decimal"/></td>
+      <td><input type="number" min="0" step="any" placeholder="0.00" id="t${id}" class="ti" readonly tabindex="-1" style="color:var(--text); outline:none; background:transparent; border:none; text-align:center;"/></td>
       <td><input type="number" min="0" step="any" placeholder="0.00" id="v${id}" class="vi" readonly tabindex="-1" style="color:var(--text); outline:none; background:transparent; border:none; text-align:center;"/></td>
       <td><input type="number" min="0" step="any" placeholder="0.00" id="a${id}" class="ai amt-inp" inputmode="decimal"/></td>
       <td class="no-print"><button class="rm-btn" onclick="removeRow(${id})" title="Remove">✕</button></td>
@@ -655,6 +661,7 @@
     /* Wire events */
     const qi = tr.querySelector('.qi');
     const ri = tr.querySelector('.ri');
+    const ti = tr.querySelector('.ti');
     const vi = tr.querySelector('.vi');
     const ai = tr.querySelector('.ai');
     const descTa = tr.querySelector('.desc-ta');
@@ -673,9 +680,11 @@
         if (q > 0 && r > 0) {
           const base = q * r;
           const vatAmt = base * 0.05;
+          ti.value = base.toFixed(2);
           vi.value = vatAmt.toFixed(2);
           ai.value = (base + vatAmt).toFixed(2);
         } else {
+          ti.value = '';
           vi.value = '';
           ai.value = '';
         }
@@ -687,9 +696,11 @@
           const r = base / q;
           const vatAmt = a - base;
           ri.value = r.toFixed(2);
+          ti.value = base.toFixed(2);
           vi.value = vatAmt.toFixed(2);
         } else {
           ri.value = '';
+          ti.value = '';
           vi.value = '';
         }
       }
@@ -729,16 +740,13 @@
     let grandTotal = 0;
     
     document.querySelectorAll('#tbody tr').forEach(tr => {
+      const ti = tr.querySelector('.ti');
       const vi = tr.querySelector('.vi');
       const ai = tr.querySelector('.ai');
       
-      const rowTotal = parseFloat(ai ? ai.value : 0) || 0;
-      const rowVat = parseFloat(vi ? vi.value : 0) || 0;
-      const rowBase = rowTotal - rowVat;
-      
-      subtotalBase += rowBase;
-      totalVat += rowVat;
-      grandTotal += rowTotal;
+      subtotalBase += parseFloat(ti ? ti.value : 0) || 0;
+      totalVat += parseFloat(vi ? vi.value : 0) || 0;
+      grandTotal += parseFloat(ai ? ai.value : 0) || 0;
     });
     
     const sym = SYM[curCode] || curCode;
@@ -758,7 +766,7 @@
     curCode = document.getElementById('curSel').value;
     const sym = SYM[curCode] || curCode;
     // Update column headers
-    document.querySelectorAll('#curHdr, #curHdr2, #curHdr3').forEach(el => el.textContent = curCode);
+    document.querySelectorAll('#curHdr, #curHdr2, #curHdr3, #curHdr4').forEach(el => el.textContent = curCode);
     recalcTotal();
   }
 
