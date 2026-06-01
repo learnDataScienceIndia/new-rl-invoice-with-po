@@ -19,18 +19,30 @@
 
     body{
       font-family:'Inter',sans-serif;
-      background:#d0dae3;
+      background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
       color:var(--text);
-      display:flex; flex-direction:column; align-items:center;
-      padding:18px 12px 40px;
+      padding:24px 12px 40px;
       min-height:100vh;
+    }
+
+    .main-wrapper {
+      margin: 0 auto;
+      width: fit-content;
+      min-width: min(100%, 900px);
     }
 
     /* ═══════════════ TOOLBAR ═══════════════ */
     .toolbar{
-      width:100%; max-width:900px;
+      width:100%;
       display:flex; justify-content:space-between; align-items:center;
-      margin-bottom:12px; gap:10px; flex-wrap:wrap;
+      margin-bottom:20px; gap:10px; flex-wrap:wrap;
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      padding: 14px 20px;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.04);
+      border: 1px solid rgba(255,255,255,0.6);
     }
     .toolbar-left{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
     .lbl{font-size:11px;font-weight:700;color:var(--muted);}
@@ -75,9 +87,9 @@
 
     /* ═══════════════ INVOICE WRAPPER ═══════════════ */
     .po-wrap{
-      width:100%; max-width:900px;
-      background:#fff; border-radius:12px; overflow:hidden;
-      box-shadow:0 8px 40px rgba(0,0,0,.14);
+      width:100%;
+      background:#fff; border-radius:16px; overflow:hidden;
+      box-shadow: 0 12px 48px rgba(0,0,0,0.06);
     }
 
     /* ═══════════════ HEADER ═══════════════ */
@@ -85,7 +97,7 @@
 
     /* Thin brand accent bar at very top */
     .top-bar{
-      height:6px;
+      height:8px;
       background:linear-gradient(90deg, var(--green) 0%, var(--blue) 100%);
     }
 
@@ -185,9 +197,9 @@
       color:#fff;
     }
     .item-tbl thead th{
-      padding:7px 7px;font-size:10px;font-weight:700;
-      letter-spacing:.8px;text-transform:uppercase;
-      border:1px solid rgba(255,255,255,.2);text-align:center;white-space:nowrap;
+      padding:10px 8px;font-size:10px;font-weight:700;
+      letter-spacing:1px;text-transform:uppercase;
+      border:1px solid rgba(255,255,255,.15);text-align:center;white-space:nowrap;
     }
     .item-tbl thead th.dh{text-align:left;}
 
@@ -215,6 +227,27 @@
     }
 
     .amt-inp{font-weight:600;color:var(--green-dk) !important;}
+
+    /* Column Controls */
+    .col-ctrls {
+      display: flex;
+      justify-content: center;
+      gap: 4px;
+      margin-top: 4px;
+    }
+    .col-btn {
+      background: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.4);
+      color: #fff;
+      font-size: 10px;
+      padding: 2px 4px;
+      cursor: pointer;
+      border-radius: 3px;
+      line-height: 1;
+    }
+    .col-btn:hover { background: rgba(255,255,255,0.4); }
+    .col-btn-rm { color: #ffcccc; border-color: #ffcccc; }
+    .col-btn-rm:hover { background: #ffcccc; color: #c0392b; }
 
     /* Remove row */
     .rm-btn{
@@ -288,9 +321,9 @@
 
     /* ═══════════════ TERMS & CONDITIONS PAGE ═══════════════ */
     .tc-page{
-      width:100%; max-width:900px;
-      background:#fff; border-radius:12px; overflow:hidden;
-      box-shadow:0 8px 40px rgba(0,0,0,.14);
+      width:100%;
+      background:#fff; border-radius:16px; overflow:hidden;
+      box-shadow: 0 12px 48px rgba(0,0,0,0.06);
       margin-top:24px;
     }
     .tc-inner{padding:28px 32px 24px;}
@@ -313,7 +346,8 @@
     /* ═══════════════ PRINT ═══════════════ */
     @media print{
       @page{size:A4 portrait;margin:7mm 9mm;}
-      html,body{background:#fff !important;padding:0;margin:0;display:block;font-size:10px;}
+      html,body{background:#fff !important;padding:0;margin:0;display:block;font-size:10px;zoom:var(--print-zoom, 1) !important;}
+      .main-wrapper{width:100% !important; min-width:auto !important; margin:0 !important;}
       .toolbar,.row-ctrl,.rm-btn,.no-print{display:none !important;}
       .po-wrap{max-width:100%;box-shadow:none;border-radius:0;}
       #poRow { display: table-row !important; }
@@ -344,6 +378,8 @@
 </head>
 <body>
 
+<div class="main-wrapper">
+
 <!-- ══════════ TOOLBAR ══════════ -->
 <div class="toolbar no-print" id="toolbar">
   <div class="toolbar-left">
@@ -362,6 +398,7 @@
       <span class="po-toggle-lbl">Include Purchase Order Number</span>
     </label>
 
+    <button class="btn btn-add" onclick="addCustomCol()">＋ Add Col</button>
     <button class="btn btn-add" onclick="addRow()">＋ Add Row</button>
   </div>
   <button class="btn btn-print" onclick="window.print()">
@@ -449,36 +486,36 @@
     <table class="item-tbl" id="itemTbl">
       <thead>
         <tr>
-          <th style="width:34px">Sr.No</th>
-          <th class="dh">Description</th>
-          <th style="width:60px">Qty</th>
-          <th style="width:120px">Unit Price (<span id="curHdr">USD</span>)</th>
-          <th style="width:100px">Total (<span id="curHdr4">USD</span>)</th>
-          <th style="width:85px">VAT 5% (<span id="curHdr3">USD</span>)</th>
-          <th style="width:120px">Grand Total (<span id="curHdr2">USD</span>):</th>
-          <th style="width:30px" class="no-print"></th>
+          <th style="width:34px" data-fixed="Sr.No">Sr.No</th>
+          <th class="dh" style="min-width:150px;" data-fixed="Description"><span contenteditable="true" style="outline:none;">Description</span></th>
+          <th style="min-width:50px" data-fixed="Qty"><span contenteditable="true" style="outline:none;">Qty</span></th>
+          <th style="min-width:90px" data-fixed="Unit Price"><span contenteditable="true" style="outline:none;">Unit Price</span> (<span id="curHdr">USD</span>)</th>
+          <th style="min-width:90px" data-fixed="Total"><span contenteditable="true" style="outline:none;">Total</span> (<span id="curHdr4">USD</span>)</th>
+          <th style="min-width:85px" data-fixed="VAT 5%"><span contenteditable="true" style="outline:none;">VAT 5%</span> (<span id="curHdr3">USD</span>)</th>
+          <th style="min-width:110px" data-fixed="Grand Total"><span contenteditable="true" style="outline:none;">Grand Total</span> (<span id="curHdr2">USD</span>):</th>
+          <th style="width:30px" class="no-print" data-fixed="Action"></th>
         </tr>
       </thead>
       <tbody id="tbody"></tbody>
       <tfoot>
         <!-- Subtotal Row -->
         <tr>
-          <td colspan="5" style="border:none; background:transparent;"></td>
-          <td style="font-weight:700; text-align:center; border:1px solid var(--border); font-size:12px; padding:7px; background:#fff;">Subtotal</td>
+          <td id="footEmpty1" colspan="5" style="border:none; background:transparent;"></td>
+          <td style="font-weight:700; text-align:center; border:1px solid var(--border); font-size:12px; padding:7px; background:#fff;"><span contenteditable="true" style="outline:none;">Subtotal</span></td>
           <td style="font-weight:800; text-align:center; border:1px solid var(--border); font-size:13px; padding:7px; background:#fff; color:var(--text);" id="subTotalVal"><span class="curSymDisplay">$</span> 0.00</td>
           <td class="no-print" style="border:none; background:transparent;"></td>
         </tr>
         <!-- VAT Row -->
         <tr>
-          <td colspan="5" style="border:none; background:transparent;"></td>
-          <td style="font-weight:700; text-align:center; border:1px solid var(--border); font-size:12px; padding:7px; background:#fff;">VAT (5%)</td>
+          <td id="footEmpty2" colspan="5" style="border:none; background:transparent;"></td>
+          <td style="font-weight:700; text-align:center; border:1px solid var(--border); font-size:12px; padding:7px; background:#fff;"><span contenteditable="true" style="outline:none;">VAT (5%)</span></td>
           <td style="font-weight:800; text-align:center; border:1px solid var(--border); font-size:13px; padding:7px; background:#fff; color:var(--text);" id="vatVal"><span class="curSymDisplay">$</span> 0.00</td>
           <td class="no-print" style="border:none; background:transparent;"></td>
         </tr>
         <!-- Grand Total Row -->
         <tr class="gt-tr">
-          <td colspan="5" style="border:none;"></td>
-          <td class="gt-lbl" style="vertical-align:middle; text-align:center !important;">Grand Total</td>
+          <td id="footEmpty3" colspan="5" style="border:none;"></td>
+          <td class="gt-lbl" style="vertical-align:middle; text-align:center !important;"><span contenteditable="true" style="outline:none;">Grand Total</span></td>
           <td class="gt-val" id="gtVal" style="vertical-align:middle;"><span id="curSymDisplay">$</span> 0.00</td>
           <td class="no-print" style="background:transparent;border:none;"></td>
         </tr>
@@ -623,15 +660,25 @@
   </div>
 
 </div><!-- /tc-page -->
-
+</div><!-- /main-wrapper -->
 
 <!-- ══════════ JAVASCRIPT ══════════ -->
 <script>
   /* ── State ── */
   let rowId   = 0;
+  let customColId = 0;
+  let customCols = [];
   let curCode = 'USD';
 
   const SYM = { AED:'AED', USD:'$', EUR:'€', GBP:'£', INR:'₹' };
+
+  /* ── Auto Resize Inputs ── */
+  function resizeInput(el) {
+    if (!el) return;
+    const val = el.value || el.placeholder || '';
+    // Adjust min-width based on character length (using ch unit)
+    el.style.minWidth = Math.max(5, val.length + 1.5) + 'ch';
+  }
 
   /* ── Init ── */
   document.addEventListener('DOMContentLoaded', () => {
@@ -641,34 +688,140 @@
     for (let i = 0; i < 8; i++) addRow();
   });
 
+  /* ── Custom Columns ── */
+  function addCustomCol() {
+    customColId++;
+    const id = customColId;
+    
+    const th = document.createElement('th');
+    th.id = `thCust${id}`;
+    th.dataset.custom = id;
+    th.innerHTML = `
+      <div contenteditable="true" style="margin-bottom:4px; outline:none; border-bottom:1px dashed rgba(255,255,255,0.4);">Custom Col</div>
+      <div class="col-ctrls no-print">
+        <button class="col-btn" onclick="moveCol(${id}, -1)">◀</button>
+        <button class="col-btn col-btn-rm" onclick="rmCol(${id})">✕</button>
+        <button class="col-btn" onclick="moveCol(${id}, 1)">▶</button>
+      </div>
+    `;
+    
+    // Insert before Qty
+    const qtyTh = document.querySelector('th[data-fixed="Qty"]');
+    qtyTh.parentNode.insertBefore(th, qtyTh);
+    
+    const ths = Array.from(qtyTh.parentNode.children);
+    const targetIdx = ths.indexOf(th);
+    
+    const rows = document.querySelectorAll('#tbody tr');
+    rows.forEach(tr => {
+      const td = document.createElement('td');
+      td.className = `tdCust${id}`;
+      td.innerHTML = `<textarea placeholder="..." class="desc-ta" rows="1" style="text-align:center;"></textarea>`;
+      td.querySelector('textarea').addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = this.scrollHeight + 'px';
+      });
+      
+      const tds = Array.from(tr.children);
+      if (targetIdx < tds.length) {
+        tr.insertBefore(td, tds[targetIdx]);
+      } else {
+        tr.appendChild(td);
+      }
+    });
+    
+    customCols.push(id);
+    updateColspan();
+  }
+
+  function rmCol(id) {
+    document.getElementById(`thCust${id}`)?.remove();
+    document.querySelectorAll(`.tdCust${id}`).forEach(td => td.remove());
+    customCols = customCols.filter(c => c !== id);
+    updateColspan();
+  }
+
+  function moveCol(id, dir) {
+    const th = document.getElementById(`thCust${id}`);
+    if (!th) return;
+    
+    const trHead = th.parentNode;
+    const thArray = Array.from(trHead.children);
+    const currIdx = thArray.indexOf(th);
+    const targetIdx = currIdx + dir;
+    
+    if (targetIdx <= 0 || targetIdx >= thArray.length - 1) return;
+    
+    if (dir === -1) {
+      trHead.insertBefore(th, thArray[targetIdx]);
+    } else {
+      trHead.insertBefore(th, thArray[targetIdx].nextSibling);
+    }
+    
+    const rows = document.querySelectorAll('#tbody tr');
+    rows.forEach(tr => {
+      const tdArray = Array.from(tr.children);
+      const currTd = tr.querySelector(`.tdCust${id}`);
+      if (!currTd) return;
+      if (dir === -1) {
+        tr.insertBefore(currTd, tdArray[targetIdx]);
+      } else {
+        tr.insertBefore(currTd, tdArray[targetIdx].nextSibling);
+      }
+    });
+  }
+
+  function updateColspan() {
+    const baseColspan = 5;
+    const newColspan = baseColspan + customCols.length;
+    document.querySelectorAll('#footEmpty1, #footEmpty2, #footEmpty3').forEach(td => {
+      td.setAttribute('colspan', newColspan);
+    });
+  }
+
   /* ── Add Row ── */
   function addRow() {
     rowId++;
     const id = rowId;
     const tr = document.createElement('tr');
     tr.id = `r${id}`;
-    tr.innerHTML = `
-      <td class="sr" id="sr${id}">${document.querySelectorAll('#tbody tr').length + 1}</td>
-      <td class="dtd"><textarea placeholder="Item description" id="d${id}" class="desc-ta" rows="1"></textarea></td>
-      <td><input type="number" min="0" step="any" placeholder="0"    id="q${id}" class="qi" inputmode="decimal"/></td>
-      <td><input type="number" min="0" step="any" placeholder="0.00" id="rt${id}" class="ri" inputmode="decimal"/></td>
-      <td><input type="number" min="0" step="any" placeholder="0.00" id="t${id}" class="ti" readonly tabindex="-1" style="color:var(--text); outline:none; background:transparent; border:none; text-align:center;"/></td>
-      <td><input type="number" min="0" step="any" placeholder="0.00" id="v${id}" class="vi" readonly tabindex="-1" style="color:var(--text); outline:none; background:transparent; border:none; text-align:center;"/></td>
-      <td><input type="number" min="0" step="any" placeholder="0.00" id="a${id}" class="ai amt-inp" inputmode="decimal"/></td>
-      <td class="no-print"><button class="rm-btn" onclick="removeRow(${id})" title="Remove">✕</button></td>
-    `;
 
-    /* Wire events */
+    const cellBuilders = {
+      'Sr.No': () => { const td = document.createElement('td'); td.className="sr"; td.id=`sr${id}`; td.textContent = document.querySelectorAll('#tbody tr').length + 1; return td; },
+      'Description': () => { const td = document.createElement('td'); td.className="dtd"; td.innerHTML = `<textarea placeholder="Item description" id="d${id}" class="desc-ta" rows="1"></textarea>`; return td; },
+      'Qty': () => { const td = document.createElement('td'); td.className="qty-td"; td.innerHTML = `<input type="number" min="0" step="any" placeholder="0" id="q${id}" class="qi" inputmode="decimal"/>`; return td; },
+      'Unit Price': () => { const td = document.createElement('td'); td.innerHTML = `<input type="number" min="0" step="any" placeholder="0.00" id="rt${id}" class="ri" inputmode="decimal"/>`; return td; },
+      'Total': () => { const td = document.createElement('td'); td.innerHTML = `<input type="number" min="0" step="any" placeholder="0.00" id="t${id}" class="ti" readonly tabindex="-1" style="color:var(--text); outline:none; background:transparent; border:none; text-align:center;"/>`; return td; },
+      'VAT 5%': () => { const td = document.createElement('td'); td.innerHTML = `<input type="number" min="0" step="any" placeholder="0.00" id="v${id}" class="vi" readonly tabindex="-1" style="color:var(--text); outline:none; background:transparent; border:none; text-align:center;"/>`; return td; },
+      'Grand Total': () => { const td = document.createElement('td'); td.innerHTML = `<input type="number" min="0" step="any" placeholder="0.00" id="a${id}" class="ai amt-inp" inputmode="decimal"/>`; return td; },
+      'Action': () => { const td = document.createElement('td'); td.className="no-print"; td.innerHTML = `<button class="rm-btn" onclick="removeRow(${id})" title="Remove">✕</button>`; return td; }
+    };
+
+    const ths = document.querySelectorAll('#itemTbl thead th');
+    ths.forEach(th => {
+      if (th.dataset.fixed) {
+        tr.appendChild(cellBuilders[th.dataset.fixed]());
+      } else if (th.dataset.custom) {
+        const custId = th.dataset.custom;
+        const td = document.createElement('td');
+        td.className = `tdCust${custId}`;
+        td.innerHTML = `<textarea placeholder="..." class="desc-ta" rows="1" style="text-align:center;"></textarea>`;
+        tr.appendChild(td);
+      }
+    });
+
+    // Wire events
     const qi = tr.querySelector('.qi');
     const ri = tr.querySelector('.ri');
     const ti = tr.querySelector('.ti');
     const vi = tr.querySelector('.vi');
     const ai = tr.querySelector('.ai');
-    const descTa = tr.querySelector('.desc-ta');
 
-    descTa.addEventListener('input', function() {
-      this.style.height = 'auto';
-      this.style.height = this.scrollHeight + 'px';
+    tr.querySelectorAll('.desc-ta').forEach(ta => {
+      ta.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = this.scrollHeight + 'px';
+      });
     });
 
     let calcMode = 'forward';
@@ -704,12 +857,17 @@
           vi.value = '';
         }
       }
+      // Resize updated inputs
+      [ri, ti, vi, ai].forEach(resizeInput);
       recalcTotal();
     }
 
-    qi.addEventListener('input', doCalc);
-    ri.addEventListener('input', () => { calcMode = 'forward'; doCalc(); });
-    ai.addEventListener('input', () => { calcMode = 'backward'; doCalc(); });
+    qi.addEventListener('input', function() { resizeInput(this); doCalc(); });
+    ri.addEventListener('input', function() { calcMode = 'forward'; resizeInput(this); doCalc(); });
+    ai.addEventListener('input', function() { calcMode = 'backward'; resizeInput(this); doCalc(); });
+
+    // Initialize sizes
+    [qi, ri, ti, vi, ai].forEach(resizeInput);
 
     document.getElementById('tbody').appendChild(tr);
     updateRowCount();
@@ -791,6 +949,28 @@
       input.value = ''; // Clear if disabled
     }
   }
+
+  /* ── Print Scaling ── */
+  window.addEventListener('beforeprint', () => {
+    const tbl = document.getElementById('itemTbl');
+    if (tbl) {
+      const oldW = tbl.style.width;
+      tbl.style.width = 'min-content';
+      const intrinsicW = tbl.offsetWidth + 20;
+      tbl.style.width = oldW;
+      
+      const safeW = 730; 
+      if (intrinsicW > safeW) {
+        document.documentElement.style.setProperty('--print-zoom', safeW / intrinsicW);
+      } else {
+        document.documentElement.style.setProperty('--print-zoom', 1);
+      }
+    }
+  });
+
+  window.addEventListener('afterprint', () => {
+    document.documentElement.style.setProperty('--print-zoom', 1);
+  });
 </script>
 
 </body>
